@@ -42,8 +42,8 @@ int main(int argc, char **argv) {
 	int nbytes[FORK_NUM];
 	int port_v[FORK_NUM];
 	int socket_desc[FORK_NUM][2];
-	struct sockaddr_in struct_socks[FORK_NUM];
-	struct sockaddr_storage struct_client[FORK_NUM];
+	struct sockaddr_in struct_server[FORK_NUM];
+	struct sockaddr_in struct_client[FORK_NUM];
 
 	pid_t child_id[FORK_NUM];
 	srand(atoi(argv[1]));
@@ -62,17 +62,21 @@ int main(int argc, char **argv) {
 			exit(1);
 		}
 
-		struct_socks[i].sin_family = AF_INET;
-		struct_socks[i].sin_addr.s_addr = INADDR_ANY;
-		struct_socks[i].sin_port = htons(port_v[i]);
+		struct_server[i].sin_family = AF_INET;
+		struct_server[i].sin_addr.s_addr = INADDR_ANY;
+		struct_server[i].sin_port = htons(port_v[i]);
 
-		if (bind(socket_desc[i][0], (struct sockaddr *) &struct_socks[i], sizeof(struct_socks)) < 0) {
+		if (bind(socket_desc[i][0], (struct sockaddr *) struct_server + i, sizeof(struct_server[i])) < 0) {
 			close(socket_desc[i][0]);
 			fprintf(stderr, "Error: bind() failed.\n");
 			exit(1);
 		}
 
-		listen(socket_desc[i][0], 1);
+		if (listen(socket_desc[i][0], 1) < 0) {
+			close(socket_desc[i][0]);
+			fprintf(stderr, "Error: listen() failed.\n");
+			exit(1);
+		}
 
 		if ((child_id[i] = fork()) == -1) {
 			fprintf(stderr, "Error: fork() failed.\n");
@@ -97,7 +101,8 @@ int main(int argc, char **argv) {
 
 	for (int i = 0; i < FORK_NUM; i++) {
 		r_val[i] = rand() % 100000;
-		socket_desc[i][1] = accept(socket_desc[i][0], (struct sockaddr *) &struct_client[i], (socklen_t*)sizeof(int));
+		socklen_t len = sizeof(struct_client[i]);
+		socket_desc[i][1] = accept(socket_desc[i][0], (struct sockaddr *)struct_client + i, &len);
 		if (socket_desc[i][1] < 0) {
 			fprintf(stderr, "Error: accept() failed.\n");
 			return 1;

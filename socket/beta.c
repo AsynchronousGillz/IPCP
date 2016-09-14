@@ -15,6 +15,7 @@
 #include <unistd.h>
 
 #define BUF_SIZE 21
+#define ADDR "127.0.0.1"
 
 int main(int argc, char **argv) {
 
@@ -47,9 +48,10 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	server.sin_addr.s_addr = inet_addr("127.0.0.1");
+	server.sin_addr.s_addr = inet_addr(ADDR);
 	server.sin_family = AF_INET;
 	server.sin_port = htons(port_v);
+	printf("%s process [%d]: connecting to %s on port %d\n", argv[0], pid, ADDR, port_v);
 
 	if (connect(sock, (struct sockaddr *)&server, sizeof(server)) < 0) {
 		fprintf(stderr, "error: connect failed\n");
@@ -67,9 +69,9 @@ int main(int argc, char **argv) {
 
 	int result = ((one * buf) & 1);
 	if (result) {
-		printf("%s process [%d]: %d *IS* even.\n", argv[0], pid, one*buf);
-	} else {
 		printf("%s process [%d]: %d *IS NOT* even.\n", argv[0], pid, one*buf);
+	} else {
+		printf("%s process [%d]: %d *IS* even.\n", argv[0], pid, one*buf);
 	}
 	printf("%s: exiting.\n", argv[0]);
 	return(result);
